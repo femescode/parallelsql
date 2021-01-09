@@ -1,0 +1,8 @@
+spring:
+  main:
+    banner-mode: off
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://${host}:${port}/${database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&useSSL=false
+    username: ${username}
+    password: ${password}
