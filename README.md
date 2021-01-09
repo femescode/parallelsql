@@ -7,9 +7,13 @@
 
 1.  in查询导出csv
 ```bash
-java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where (order_id,user_id) in (#{in})" --inFile "C:\infile.txt" --batchSize 10 -v -k -r -o temp.csv
+$ java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where (order_id,user_id) in (#{in})" --inFile "C:\infile.txt" --batchSize 10 -v -k -r -o temp.csv
+$ cat infile.txt
+order_id,user_id
+1315179275010002,1160013421
+1410139275010001,3150019087
 ```
 2.  范围查询导出json
 ```bash
-java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where add_time >= #{start} and add_time < #{end} limit 1" --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json
+$ java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where add_time >= #{start} and add_time < #{end} limit 1" --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json
 ```
