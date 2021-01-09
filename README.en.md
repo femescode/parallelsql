@@ -1,36 +1,15 @@
 # parallelsql
 
 #### Description
-并行执行sql的工具，用于数据导出与在线统计。
-
-#### Software Architecture
-Software architecture description
-
-#### Installation
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
+parallel execute sql tools, to export to file and more。
 
 #### Instructions
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Contribution
-
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
-
-
-#### Gitee Feature
-
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+1.  in query to export csv file
+```bash
+java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where (order_id,user_id) in (#{in})" --inFile "C:\infile.txt" --batchSize 10 -v -k -r -o temp.csv
+```
+2.  range query to export json file
+```bash
+java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql "select * from order where add_time >= #{start} and add_time < #{end} limit 1" --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json
+```
