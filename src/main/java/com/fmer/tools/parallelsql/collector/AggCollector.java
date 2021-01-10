@@ -46,6 +46,10 @@ public class AggCollector extends SqlResultCollector {
      * 存放聚集后的数据
      */
     private Map<String, AggRowData> aggRowDataMap;
+    /**
+     * 异常列表
+     */
+    private List<SqlResult> errorSqlResultList;
 
 
     public AggCollector(CliArgs cliArgs, DataPrinter dataPrinter, Progress progress) {
@@ -54,6 +58,7 @@ public class AggCollector extends SqlResultCollector {
         this.aliasMap = Maps.newHashMap();
         this.aggFuncMap = Maps.newHashMap();
         this.aggRowDataMap = Maps.newHashMap();
+        this.errorSqlResultList = Lists.newArrayList();
     }
 
     public void setSql(String sql){
@@ -136,6 +141,10 @@ public class AggCollector extends SqlResultCollector {
 
     @Override
     public synchronized void add(SqlResult sqlResult){
+        if(sqlResult.getE() != null){
+            errorSqlResultList.add(sqlResult);
+            return;
+        }
         for(RowData rowData : sqlResult.getTableData().getRows()){
             if(!rowData.getColumnDataMap().keySet().containsAll(groupByFields)){
                 throw new RuntimeException("行数据中没有包含group by字段，无法聚集计算! groupByFields: " + groupByFields + ", rowData: " + rowData.getColumnDataMap());
@@ -187,6 +196,8 @@ public class AggCollector extends SqlResultCollector {
         tableData.setFieldMap(fieldMap);
         SqlResult sqlResult = new SqlResult(cliArgs, null, null, tableData);
         super.add(sqlResult);
+        //输出异常
+        errorSqlResultList.forEach(super::add);
 
         super.finish();
     }
