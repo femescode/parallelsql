@@ -83,11 +83,11 @@ public class CliUtils {
         return "java -jar parallelsql.jar -[hPupDvkr] --sql $sql " +
                 "   [--inFile $file --batchSize $num] " +
                 "   [--rangeStart $start --rangeEnd $end --rangeSpan $span]" +
-                "   [--collector agg] -o $outfile";
+                "   [--collector agg] -o $outfile\n";
     }
 
     private static String getFooter(){
-        return "Demo:\n java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+        return "\nDemo:\n java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
                 "   --sql \"select * from order where (order_id,user_id) in (#{in})\" \\\n" +
                 "   --inFile \"C:\\\\infile.txt\" --batchSize 10 -v -k -r -o temp.csv \n\n" +
 
