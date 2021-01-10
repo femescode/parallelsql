@@ -3,6 +3,7 @@ package com.fmer.tools.parallelsql.printer;
 import com.fmer.tools.parallelsql.bean.ArgLocation;
 import com.google.common.util.concurrent.AtomicDouble;
 import lombok.Data;
+import org.apache.commons.lang3.time.DurationFormatUtils;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -15,10 +16,12 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Progress {
     private static final long PROGRESS_PRINT_INTERVAL = 1000L;
 
+    private long startTime;
     private AtomicDouble progress;
     private AtomicLong preProgressTime;
 
     public Progress() {
+        this.startTime = System.currentTimeMillis();
         this.progress = new AtomicDouble();
         this.preProgressTime = new AtomicLong();
     }
@@ -29,7 +32,7 @@ public class Progress {
 
     public String getProgressToDisplay(){
         preProgressTime.set(System.currentTimeMillis());
-        return String.format("[%2.0f%%]", progress.get());
+        return String.format("[%2.0f%% %s]", progress.get(), getDurationString());
     }
 
     public void printProgressIfNeed(){
@@ -41,6 +44,11 @@ public class Progress {
 
     public void printDoneProgress(){
         progress.set(100D);
-        System.err.println("[100%]");
+
+        System.err.println(String.format("[100%% %s]", getDurationString()));
+    }
+
+    private String getDurationString(){
+        return DurationFormatUtils.formatDurationWords(System.currentTimeMillis()-startTime, true, true);
     }
 }
