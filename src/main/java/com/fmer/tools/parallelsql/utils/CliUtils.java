@@ -64,8 +64,18 @@ public class CliUtils {
             commandLine = parser.parse(options, args);
         } catch (ParseException e) {
             System.err.println(e.getMessage() + "\n Usage: \n" +
-                    "java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql \"select * from order where (order_id,user_id) in (#{in})\" --inFile \"C:\\\\infile.txt\" --batchSize 10 -v -k -r -o temp.csv \n" +
-                    "java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop --sql \"select * from order where add_time >= #{start} and add_time < #{end} limit 1\" --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json");
+                    "java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                    "   --sql \"select * from order where (order_id,user_id) in (#{in})\" \\\n" +
+                    "   --inFile \"C:\\\\infile.txt\" --batchSize 10 -v -k -r -o temp.csv \n" +
+
+                    "java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                    "   --sql \"select * from order where add_time >= #{start} and add_time < #{end} limit 1\" \\\n" +
+                    "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json" +
+
+                    "java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                    "   --sql \"select user_id,count(*) num from order where add_time >= #{start} and add_time < #{end} group by user_id\" \\\n" +
+                    "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r --collector agg -o temp.json"
+            );
             System.exit(1);
         }
         return commandLine;
