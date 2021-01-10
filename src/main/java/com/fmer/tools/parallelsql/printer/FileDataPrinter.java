@@ -6,6 +6,7 @@ import com.fmer.tools.parallelsql.constants.ContentTypeEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import com.fmer.tools.parallelsql.jdbc.RowData;
 import com.fmer.tools.parallelsql.utils.CsvUtils;
+import com.fmer.tools.parallelsql.utils.GsonUtils;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -36,22 +37,22 @@ public class FileDataPrinter extends DataPrinter {
     public FileDataPrinter(CliArgs cliArgs){
         this.cliArgs = cliArgs;
         this.i = new AtomicInteger();
-        if(cliArgs.getOutFile().equalsIgnoreCase(StringConstant.STDOUT)){
+        String fileName = FilenameUtils.getBaseName(cliArgs.getOutFile());
+        String ext = FilenameUtils.getExtension(cliArgs.getOutFile());
+        if(StringUtils.isNotEmpty(ext)){
+            this.contentType = ContentTypeEnum.getByValue(ext.toLowerCase());
+        }else{
+            this.contentType = ContentTypeEnum.TSV;
+        }
+        if(fileName.equalsIgnoreCase(StringConstant.STDOUT)){
             if(this.cliArgs.isVerbose()){
                 System.err.println("outFile: " + cliArgs.getOutFile());
             }
             this.outputStreamWriter = new OutputStreamWriter(System.out, StandardCharsets.UTF_8);
-            this.contentType = ContentTypeEnum.JSON;
         }else{
             File file = new File(cliArgs.getOutFile());
             if(this.cliArgs.isVerbose()){
                 System.err.println("outFile: " + file.getAbsolutePath());
-            }
-            String ext = FilenameUtils.getExtension(file.getName());
-            if(StringUtils.isNotEmpty(ext)){
-                this.contentType = ContentTypeEnum.getByValue(ext.toLowerCase());
-            }else{
-                this.contentType = ContentTypeEnum.JSON;
             }
             try {
                 this.outputStreamWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
@@ -65,30 +66,45 @@ public class FileDataPrinter extends DataPrinter {
     @Override
     public void print(SqlResult sqlResult){
         List<String> lines = Lists.newArrayList();
+        //写入标题
         if(i.get() == 0){
             this.fieldNameSet = sqlResult.getTableData().getFieldMap().keySet();
-            if(this.contentType.equals(ContentTypeEnum.CSV)){
+            if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
                 List<String> fieldNameList = Lists.newArrayList();
                 fieldNameList.add("tags");
+                fieldNameList.add("exception");
                 fieldNameList.addAll(this.fieldNameSet);
-                lines.add(CsvUtils.concat(fieldNameList, CsvUtils.DOT));
-            }else{
-                lines.add("[");
+                lines.add(CsvUtils.concat(fieldNameList, CsvUtils.getSep(this.contentType)));
             }
         }
         if(sqlResult.getE() != null){
-            lines.add(CsvUtils.concat(new String[]{String.valueOf(sqlResult.getSqlArg()), "执行发生异常, e: " + sqlResult.getE().getMessage()}, CsvUtils.DOT));
+            String stacktrace = ExceptionUtils.getStackTrace(sqlResult.getE());
+            if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
+                List<String> cols = Lists.newArrayList();
+                cols.add(getTagString(sqlResult.getSqlArg().getArgs()));
+                cols.add(stacktrace);
+                cols.addAll(fieldNameSet.stream().map(k -> "").collect(Collectors.toList()));
+                lines.add(CsvUtils.concat(cols, CsvUtils.getSep(this.contentType)));
+            }else{
+                JsonObject json = new JsonObject();
+                json.addProperty("tags", getTagString(sqlResult.getSqlArg().getArgs()));
+                json.addProperty("exception", stacktrace);
+                json.add("data", GsonUtils.getGson().toJsonTree(Collections.emptyMap()));
+                lines.add(json.toString());
+            }
         }else if(CollectionUtils.isNotEmpty(sqlResult.getTableData().getRows())){
             for(RowData rowData : sqlResult.getTableData().getRows()){
-                if(this.contentType.equals(ContentTypeEnum.CSV)){
+                if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
                     List<String> cols = Lists.newArrayList();
                     cols.add(getTagString(rowData.getTags()));
-                    cols.addAll(fieldNameSet.stream().map(k -> Objects.toString(rowData.getColumnDataMap().get(k), null)).collect(Collectors.toList()));
-                    lines.add(CsvUtils.concat(cols, CsvUtils.DOT));
+                    cols.add("");
+                    cols.addAll(fieldNameSet.stream().map(k -> getColumnString(rowData.getColumnDataMap().get(k))).collect(Collectors.toList()));
+                    lines.add(CsvUtils.concat(cols, CsvUtils.getSep(this.contentType)));
                 }else{
                     JsonObject json = new JsonObject();
                     json.addProperty("tags", getTagString(rowData.getTags()));
-                    json.add("data", new Gson().toJsonTree(rowData.getColumnDataMap()));
+                    json.addProperty("exception", "");
+                    json.add("data", GsonUtils.getGson().toJsonTree(rowData.getColumnDataMap()));
                     lines.add(json.toString());
                 }
             }
@@ -108,12 +124,16 @@ public class FileDataPrinter extends DataPrinter {
         return Arrays.stream(tags).map(s -> Objects.toString(s, "")).collect(Collectors.joining("_"));
     }
 
+    private String getColumnString(Object o){
+        if(o instanceof Date){
+
+        }
+        return Objects.toString(o, null);
+    }
+
     @Override
     public void close(){
         try {
-            if(this.contentType.equals(ContentTypeEnum.JSON)){
-                IOUtils.writeLines(Collections.singleton("]"), null, outputStreamWriter);
-            }
             this.outputStreamWriter.flush();
             this.outputStreamWriter.close();
         } catch (IOException e) {

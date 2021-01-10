@@ -1,5 +1,6 @@
 package com.fmer.tools.parallelsql.utils;
 
+import com.fmer.tools.parallelsql.constants.ContentTypeEnum;
 import com.google.common.collect.Lists;
 
 import java.util.Arrays;
@@ -16,7 +17,18 @@ import java.util.stream.Collectors;
  */
 public class CsvUtils {
     public static final String DOT = ",";
+    public static final String TAB = "\t";
     public static final Pattern FPAT = Pattern.compile("\\G\\s*([^,\\n\\r]*|\"[^\"]*(?:\"\"[^\"]*)*\")\\s*(?:,|$)");
+
+    public static String getSep(ContentTypeEnum contentTypeEnum){
+        if(contentTypeEnum.equals(ContentTypeEnum.CSV)){
+            return DOT;
+        }else if(contentTypeEnum.equals(ContentTypeEnum.TSV)){
+            return TAB;
+        }else{
+            throw new RuntimeException("无法识别为csv或tsv，contentTypeEnum: " + contentTypeEnum.getValue());
+        }
+    }
 
     public static String[] split(String line, String sep){
         if(!line.contains("\"")){
@@ -45,7 +57,7 @@ public class CsvUtils {
             return "";
         }
         if(s.contains(sep) || s.contains("\"")){
-            s = s.replace("\"", "\"\"");
+            s = s.replace("\"", "\"\"").replace("\r", "\\r").replace("\n", "\\n").replace("\t", "\\t");
             return "\"" + s + "\"";
         }
         return s;
@@ -55,7 +67,7 @@ public class CsvUtils {
             return "";
         }
         if(s.startsWith("\"") && s.endsWith("\"")){
-            return s.substring(0, s.length() -1).replace("\"\"", "\"");
+            return s.substring(0, s.length() -1).replace("\"\"", "\"").replace("\\r", "\r").replace("\\n", "\n").replace("\\t", "\t");
         }
         return s;
     }

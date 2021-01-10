@@ -16,6 +16,10 @@ public enum ContentTypeEnum {
      */
     CSV("csv"),
     /**
+     * tsv格式
+     */
+    TSV("tsv"),
+    /**
      * json格式
      */
     JSON("json"),

@@ -4,6 +4,7 @@ import com.fmer.tools.parallelsql.bean.CliArgs;
 import com.fmer.tools.parallelsql.bean.SqlArg;
 import com.fmer.tools.parallelsql.jdbc.SqlArgTask;
 import com.fmer.tools.parallelsql.collector.SqlResultCollector;
+import com.fmer.tools.parallelsql.printer.Progress;
 import com.fmer.tools.parallelsql.utils.CliUtils;
 import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
@@ -51,13 +52,14 @@ public class ParallelSqlApplication implements CommandLineRunner {
         Iterator<? extends SqlArg> sqlArgIterator = CliUtils.getArgIterator(cliArgs);
 
         ExecutorService executor = CliUtils.getThreadPool(cliArgs.getThreadNum());
+        Progress progress = new Progress();
 
-        SqlResultCollector sqlResultCollector = CliUtils.getSqlResultCollector(cliArgs);
+        SqlResultCollector sqlResultCollector = CliUtils.getSqlResultCollector(cliArgs, progress);
         List<CompletableFuture<Void>> futures = Lists.newArrayList();
         CompletableFuture<Void> preFuture = null;
         while(sqlArgIterator.hasNext()){
             SqlArg sqlArg = sqlArgIterator.next();
-            SqlArgTask sqlArgTask = new SqlArgTask(cliArgs, sqlArg, jdbcTemplate);
+            SqlArgTask sqlArgTask = new SqlArgTask(cliArgs, sqlArg, jdbcTemplate, progress);
             final CompletableFuture<Void> finalPreFuture = preFuture;
             CompletableFuture<Void> future = CompletableFuture.supplyAsync(sqlArgTask, executor).thenApply(sqlResult -> {
                         if(!cliArgs.isKeepOrder()){

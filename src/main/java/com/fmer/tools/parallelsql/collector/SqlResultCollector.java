@@ -4,6 +4,7 @@ import com.fmer.tools.parallelsql.bean.*;
 import com.fmer.tools.parallelsql.jdbc.RowData;
 import com.fmer.tools.parallelsql.jdbc.TableData;
 import com.fmer.tools.parallelsql.printer.DataPrinter;
+import com.fmer.tools.parallelsql.printer.Progress;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -18,10 +19,13 @@ import java.util.List;
 public abstract class SqlResultCollector {
     protected CliArgs cliArgs;
     protected DataPrinter dataPrinter;
+    private Progress progress;
 
-    public SqlResultCollector(CliArgs cliArgs, DataPrinter dataPrinter){
+
+    public SqlResultCollector(CliArgs cliArgs, DataPrinter dataPrinter, Progress progress){
         this.cliArgs = cliArgs;
         this.dataPrinter = dataPrinter;
+        this.progress = progress;
     }
 
     public void add(SqlResult sqlResult){
@@ -48,7 +52,13 @@ public abstract class SqlResultCollector {
                 }
             }
         }
+        //打印进度
+        ArgLocation argLocation = sqlResult.getSqlArg().getArgLocation();
+        progress.setProgress(argLocation);
+        progress.printProgressIfNeed();
     }
 
-    public abstract void finish();
+    public void finish(){
+        progress.printDoneProgress();
+    }
 }

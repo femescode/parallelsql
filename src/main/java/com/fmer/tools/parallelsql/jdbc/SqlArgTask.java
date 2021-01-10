@@ -4,7 +4,9 @@ import com.fmer.tools.parallelsql.bean.CliArgs;
 import com.fmer.tools.parallelsql.bean.InSqlArg;
 import com.fmer.tools.parallelsql.bean.SqlArg;
 import com.fmer.tools.parallelsql.bean.SqlResult;
+import com.fmer.tools.parallelsql.printer.Progress;
 import com.fmer.tools.parallelsql.utils.CliUtils;
+import com.fmer.tools.parallelsql.utils.GsonUtils;
 import com.fmer.tools.parallelsql.utils.ResultSetUtils;
 import com.fmer.tools.parallelsql.utils.SqlUtils;
 import com.google.common.collect.Lists;
@@ -13,6 +15,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.*;
@@ -28,11 +31,13 @@ public class SqlArgTask implements Supplier<SqlResult> {
     private CliArgs cliArgs;
     private SqlArg sqlArg;
     private JdbcTemplate jdbcTemplate;
+    private Progress progress;
 
-    public SqlArgTask(CliArgs cliArgs, SqlArg sqlArg, JdbcTemplate jdbcTemplate){
+    public SqlArgTask(CliArgs cliArgs, SqlArg sqlArg, JdbcTemplate jdbcTemplate, Progress progress){
         this.cliArgs = cliArgs;
         this.sqlArg = sqlArg;
         this.jdbcTemplate = jdbcTemplate;
+        this.progress = progress;
     }
 
     @Override
@@ -40,11 +45,15 @@ public class SqlArgTask implements Supplier<SqlResult> {
         try{
             String sql = CliUtils.getExecutableSql(cliArgs.getSql(), sqlArg);
             if(cliArgs.isVerbose()){
-                System.err.println("execute sql: " + SqlUtils.getPlainSql(sql, sqlArg.getArgs()));
+                System.err.println(this.progress.getProgressToDisplay() + " sql: " + SqlUtils.getPlainSql(sql, sqlArg.getArgs()));
             }
             TableData tableData = jdbcTemplate.query(sql, ResultSetUtils::queryTableData, sqlArg.getArgs());
             if(cliArgs.isVerbose()){
-                System.err.println("result: " + new Gson().toJson(tableData.getRows()));
+                String result = "Total: " + tableData.getRows().size() + " " + GsonUtils.getGson().toJson(tableData.getRows());
+                if(result.length() > 240){
+                    result = StringUtils.abbreviate(result, 240);
+                }
+                System.err.println(this.progress.getProgressToDisplay() + " result: " + result);
             }
             //排序in查询的结果行，并设置每行的tag
             sortRowsIfKeepOrderAndSetTag(tableData);

@@ -14,6 +14,7 @@ import com.fmer.tools.parallelsql.iterator.RangeArgIterator;
 import com.fmer.tools.parallelsql.printer.ConsoleDataPrinter;
 import com.fmer.tools.parallelsql.printer.DataPrinter;
 import com.fmer.tools.parallelsql.printer.FileDataPrinter;
+import com.fmer.tools.parallelsql.printer.Progress;
 import org.apache.commons.cli.*;
 import org.springframework.util.CustomizableThreadCreator;
 
@@ -131,15 +132,15 @@ public class CliUtils {
         return sqlArgIterator;
     }
 
-    public static SqlResultCollector getSqlResultCollector(CliArgs cliArgs){
+    public static SqlResultCollector getSqlResultCollector(CliArgs cliArgs, Progress progress){
         DataPrinter dataPrinter = getDataPrinter(cliArgs);
         CollectorEnum collectorEnum = CollectorEnum.getByValue(cliArgs.getCollector());
         if(collectorEnum.equals(CollectorEnum.QUERY)){
-            return new QueryCollector(cliArgs, dataPrinter);
+            return new QueryCollector(cliArgs, dataPrinter, progress);
         }else if(collectorEnum.equals(CollectorEnum.AGG)){
-            return new AggCollector(cliArgs, dataPrinter);
+            return new AggCollector(cliArgs, dataPrinter, progress);
         }else{
-            return new QueryCollector(cliArgs, dataPrinter);
+            return new QueryCollector(cliArgs, dataPrinter, progress);
         }
     }
 

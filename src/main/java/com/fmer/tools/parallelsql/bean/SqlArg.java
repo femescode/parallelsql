@@ -9,5 +9,11 @@ import lombok.Data;
  */
 @Data
 public abstract class SqlArg {
+    private ArgLocation argLocation;
+
+    /**
+     * 获取jdbc参数
+     * @return
+     */
     abstract public Object[] getArgs();
 }
