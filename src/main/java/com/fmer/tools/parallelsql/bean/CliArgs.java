@@ -5,6 +5,8 @@ import com.fmer.tools.parallelsql.constants.DataPrinterEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import lombok.Data;
 
+import java.util.Set;
+
 /**
  * 命令行参数对象
  * @author fengmeng

@@ -16,9 +16,13 @@ import com.fmer.tools.parallelsql.printer.DataPrinter;
 import com.fmer.tools.parallelsql.printer.FileDataPrinter;
 import com.fmer.tools.parallelsql.printer.Progress;
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.util.CustomizableThreadCreator;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -138,7 +142,9 @@ public class CliUtils {
         if(collectorEnum.equals(CollectorEnum.QUERY)){
             return new QueryCollector(cliArgs, dataPrinter, progress);
         }else if(collectorEnum.equals(CollectorEnum.AGG)){
-            return new AggCollector(cliArgs, dataPrinter, progress);
+            AggCollector aggCollector = new AggCollector(cliArgs, dataPrinter, progress);
+            aggCollector.setSql(cliArgs.getSql().replaceAll("#\\{\\s*[\\w_]*\\s*}", "?"));
+            return aggCollector;
         }else{
             return new QueryCollector(cliArgs, dataPrinter, progress);
         }
@@ -201,6 +207,23 @@ public class CliUtils {
             return sql.substring(0, start2) + "?" + sql.substring(end2, start3) + "?" + sql.substring(end3);
         }
         throw new RuntimeException("无法识别的sql: " + sql);
+    }
+
+    public static String getColumnString(Object o){
+        if(o instanceof Date){
+            return DateFormatUtils.format((Date) o, DateUtils.YMD_HMS);
+        }
+        return Objects.toString(o, null);
+    }
+
+    public static BigDecimal getColumnBigDecimal(Object o){
+        if(o == null){
+            return BigDecimal.ZERO;
+        }
+        if(o instanceof BigDecimal){
+            return (BigDecimal)o;
+        }
+        return new BigDecimal(o.toString());
     }
 
 }

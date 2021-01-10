@@ -24,4 +24,8 @@ public class SqlUtils {
         }
         return sb.toString();
     }
+
+    public static String dealColumnName(String columnName){
+        return columnName.toLowerCase();
+    }
 }

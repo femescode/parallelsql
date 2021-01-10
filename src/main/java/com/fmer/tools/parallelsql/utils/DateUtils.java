@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
  * @date 2021/1/10 11:16
  */
 public class DateUtils {
+    public static final String YMD_HMS = "yyyy-MM-dd HH:mm:ss";
+    public static final String ISO_8601 = "yyyy-MM-dd'T'HH:mm:ssZZ";
     private static final Pattern DATE_TIME_PATTERN = Pattern.compile("\\d{4}[-/]\\d{2}[-/]\\d{2}(?:[ T]\\d{2}(?::\\d{2}(?::\\d{2})?)?(?:[-+]\\d{2}:?\\d{2})?)?");
     private static final String[] DATE_PATTERNS = new String[]{
             "yyyy-MM-dd HH:mm:ss",

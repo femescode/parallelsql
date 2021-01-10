@@ -23,7 +23,6 @@ public class QueryCollector extends SqlResultCollector {
 
     @Override
     public void finish(){
-        dataPrinter.close();
         super.finish();
     }
 }

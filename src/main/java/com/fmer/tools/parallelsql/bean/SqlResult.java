@@ -10,17 +10,23 @@ import lombok.Data;
  */
 @Data
 public class SqlResult {
+    private CliArgs cliArgs;
     private SqlArg sqlArg;
+    private String sql;
     private Throwable e;
     private TableData tableData;
 
-    public SqlResult(SqlArg sqlArg, TableData tableData) {
+    public SqlResult(CliArgs cliArgs, SqlArg sqlArg, String sql, TableData tableData) {
+        this.cliArgs = cliArgs;
         this.sqlArg = sqlArg;
+        this.sql = sql;
         this.tableData = tableData;
     }
 
-    public SqlResult(SqlArg sqlArg, Throwable e) {
+    public SqlResult(CliArgs cliArgs, SqlArg sqlArg, String sql, Throwable e) {
+        this.cliArgs = cliArgs;
         this.sqlArg = sqlArg;
+        this.sql = sql;
         this.e = e;
     }
 

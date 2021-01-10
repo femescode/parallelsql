@@ -5,7 +5,9 @@ import com.fmer.tools.parallelsql.bean.SqlResult;
 import com.fmer.tools.parallelsql.constants.ContentTypeEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import com.fmer.tools.parallelsql.jdbc.RowData;
+import com.fmer.tools.parallelsql.utils.CliUtils;
 import com.fmer.tools.parallelsql.utils.CsvUtils;
+import com.fmer.tools.parallelsql.utils.DateUtils;
 import com.fmer.tools.parallelsql.utils.GsonUtils;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
@@ -15,6 +17,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -72,8 +75,8 @@ public class FileDataPrinter extends DataPrinter {
             if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
                 List<String> fieldNameList = Lists.newArrayList();
                 fieldNameList.add("tags");
-                fieldNameList.add("exception");
                 fieldNameList.addAll(this.fieldNameSet);
+                fieldNameList.add("exception");
                 lines.add(CsvUtils.concat(fieldNameList, CsvUtils.getSep(this.contentType)));
             }
         }
@@ -82,14 +85,14 @@ public class FileDataPrinter extends DataPrinter {
             if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
                 List<String> cols = Lists.newArrayList();
                 cols.add(getTagString(sqlResult.getSqlArg().getArgs()));
-                cols.add(stacktrace);
                 cols.addAll(fieldNameSet.stream().map(k -> "").collect(Collectors.toList()));
+                cols.add(stacktrace);
                 lines.add(CsvUtils.concat(cols, CsvUtils.getSep(this.contentType)));
             }else{
                 JsonObject json = new JsonObject();
                 json.addProperty("tags", getTagString(sqlResult.getSqlArg().getArgs()));
-                json.addProperty("exception", stacktrace);
                 json.add("data", GsonUtils.getGson().toJsonTree(Collections.emptyMap()));
+                json.addProperty("exception", stacktrace);
                 lines.add(json.toString());
             }
         }else if(CollectionUtils.isNotEmpty(sqlResult.getTableData().getRows())){
@@ -97,14 +100,14 @@ public class FileDataPrinter extends DataPrinter {
                 if(this.contentType.equals(ContentTypeEnum.CSV) || this.contentType.equals(ContentTypeEnum.TSV)){
                     List<String> cols = Lists.newArrayList();
                     cols.add(getTagString(rowData.getTags()));
+                    cols.addAll(fieldNameSet.stream().map(k -> CliUtils.getColumnString(rowData.getColumnDataMap().get(k))).collect(Collectors.toList()));
                     cols.add("");
-                    cols.addAll(fieldNameSet.stream().map(k -> getColumnString(rowData.getColumnDataMap().get(k))).collect(Collectors.toList()));
                     lines.add(CsvUtils.concat(cols, CsvUtils.getSep(this.contentType)));
                 }else{
                     JsonObject json = new JsonObject();
                     json.addProperty("tags", getTagString(rowData.getTags()));
-                    json.addProperty("exception", "");
                     json.add("data", GsonUtils.getGson().toJsonTree(rowData.getColumnDataMap()));
+                    json.addProperty("exception", "");
                     lines.add(json.toString());
                 }
             }
@@ -122,13 +125,6 @@ public class FileDataPrinter extends DataPrinter {
 
     private String getTagString(Object[] tags){
         return Arrays.stream(tags).map(s -> Objects.toString(s, "")).collect(Collectors.joining("_"));
-    }
-
-    private String getColumnString(Object o){
-        if(o instanceof Date){
-
-        }
-        return Objects.toString(o, null);
     }
 
     @Override

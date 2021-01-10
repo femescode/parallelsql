@@ -33,7 +33,7 @@ public class ResultSetUtils {
             columnMeta.setColumnClassName(rsmd.getColumnClassName(i));
             columnMeta.setColumnDisplaySize(rsmd.getColumnDisplaySize(i));
             columnMeta.setLocation(i);
-            fieldMap.put(rsmd.getColumnLabel(i), columnMeta);
+            fieldMap.put(SqlUtils.dealColumnName(rsmd.getColumnLabel(i)), columnMeta);
         }
         tableData.setFieldMap(fieldMap);
 
@@ -50,7 +50,7 @@ public class ResultSetUtils {
             Map<String, Object> columnMap = Maps.newLinkedHashMapWithExpectedSize(rsmd.getColumnCount());
             for(int i=1;i <= rsmd.getColumnCount(); i++){
                 String columnLabel = rsmd.getColumnLabel(i);
-                columnMap.put(columnLabel, getColumnData(rsmd, rs, i));
+                columnMap.put(SqlUtils.dealColumnName(columnLabel), getColumnData(rsmd, rs, i));
             }
             rows.add(new RowData(columnMap));
         }

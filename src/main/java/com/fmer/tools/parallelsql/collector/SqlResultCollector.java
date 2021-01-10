@@ -43,22 +43,19 @@ public abstract class SqlResultCollector {
                     }
                     TableData tableData = new TableData();
                     tableData.setRows(rows);
-                    dataPrinter.print(new SqlResult(sqlArg, tableData));
+                    dataPrinter.print(new SqlResult(cliArgs, sqlArg, sqlResult.getSql(), tableData));
                 }else if(sqlArg instanceof RangeSqlArg){
                     RangeSqlArg rangeSqlArg = (RangeSqlArg)sqlArg;
                     TableData tableData = new TableData();
                     tableData.setRows(Collections.singletonList(new RowData(rangeSqlArg.getArgs(), Collections.emptyMap())));
-                    dataPrinter.print(new SqlResult(sqlArg, tableData));
+                    dataPrinter.print(new SqlResult(cliArgs, sqlArg, sqlResult.getSql(), tableData));
                 }
             }
         }
-        //打印进度
-        ArgLocation argLocation = sqlResult.getSqlArg().getArgLocation();
-        progress.setProgress(argLocation);
-        progress.printProgressIfNeed();
     }
 
     public void finish(){
+        dataPrinter.close();
         progress.printDoneProgress();
     }
 }

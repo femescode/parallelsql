@@ -13,7 +13,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import com.google.gson.Gson;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -42,10 +41,11 @@ public class SqlArgTask implements Supplier<SqlResult> {
 
     @Override
     public SqlResult get() {
+        String sql = CliUtils.getExecutableSql(cliArgs.getSql(), sqlArg);
+        String plainSql = SqlUtils.getPlainSql(sql, sqlArg.getArgs());
         try{
-            String sql = CliUtils.getExecutableSql(cliArgs.getSql(), sqlArg);
             if(cliArgs.isVerbose()){
-                System.err.println(this.progress.getProgressToDisplay() + " sql: " + SqlUtils.getPlainSql(sql, sqlArg.getArgs()));
+                System.err.println(this.progress.getProgressToDisplay() + " sql: " + plainSql);
             }
             TableData tableData = jdbcTemplate.query(sql, ResultSetUtils::queryTableData, sqlArg.getArgs());
             if(cliArgs.isVerbose()){
@@ -57,9 +57,9 @@ public class SqlArgTask implements Supplier<SqlResult> {
             }
             //排序in查询的结果行，并设置每行的tag
             sortRowsIfKeepOrderAndSetTag(tableData);
-            return new SqlResult(sqlArg, tableData);
+            return new SqlResult(this.cliArgs, this.sqlArg, plainSql, tableData);
         }catch (Throwable e){
-            return new SqlResult(this.sqlArg, e);
+            return new SqlResult(this.cliArgs, this.sqlArg, plainSql, e);
         }
     }
 

@@ -1,14 +1,14 @@
 package com.fmer.tools.parallelsql;
 
+import com.fmer.tools.parallelsql.bean.ArgLocation;
 import com.fmer.tools.parallelsql.bean.CliArgs;
 import com.fmer.tools.parallelsql.bean.SqlArg;
-import com.fmer.tools.parallelsql.jdbc.SqlArgTask;
 import com.fmer.tools.parallelsql.collector.SqlResultCollector;
+import com.fmer.tools.parallelsql.jdbc.SqlArgTask;
 import com.fmer.tools.parallelsql.printer.Progress;
 import com.fmer.tools.parallelsql.utils.CliUtils;
 import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.ParseException;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,7 +18,9 @@ import javax.annotation.Resource;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 启动类
@@ -30,7 +32,7 @@ public class ParallelSqlApplication implements CommandLineRunner {
     @Resource
     private JdbcTemplate jdbcTemplate;
 
-    public static void main(String[] args) throws ParseException {
+    public static void main(String[] args) {
         CliUtils.initBoot();
         CommandLine commandLine = CliUtils.getCommandLine(args);
         CliArgs cliArgs = CliUtils.getCliArgs(commandLine);
@@ -62,15 +64,21 @@ public class ParallelSqlApplication implements CommandLineRunner {
             SqlArgTask sqlArgTask = new SqlArgTask(cliArgs, sqlArg, jdbcTemplate, progress);
             final CompletableFuture<Void> finalPreFuture = preFuture;
             CompletableFuture<Void> future = CompletableFuture.supplyAsync(sqlArgTask, executor).thenApply(sqlResult -> {
-                        if(!cliArgs.isKeepOrder()){
-                            sqlResultCollector.add(sqlResult);
-                        }else{
-                            if(finalPreFuture != null){
-                                finalPreFuture.join();
-                            }
-                            sqlResultCollector.add(sqlResult);
-                        }
-                        return null;
+                if(!cliArgs.isKeepOrder()){
+                    sqlResultCollector.add(sqlResult);
+                }else{
+                    if(finalPreFuture != null){
+                        finalPreFuture.join();
+                    }
+                    sqlResultCollector.add(sqlResult);
+                }
+                //打印进度
+                if(sqlResult.getSqlArg() != null){
+                    ArgLocation argLocation = sqlResult.getSqlArg().getArgLocation();
+                    progress.setProgress(argLocation);
+                    progress.printProgressIfNeed();
+                }
+                return null;
             });
             preFuture = future;
             futures.add(future);
