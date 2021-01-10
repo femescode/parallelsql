@@ -41,45 +41,65 @@ public class CliUtils {
     public static CommandLine getCommandLine(String... args) {
         DefaultParser parser = new DefaultParser( );
         Options options = new Options( );
-        options.addRequiredOption("h", "host", true, "host");
-        options.addRequiredOption("P", "port", true, "port");
-        options.addRequiredOption("D", "database", true, "database");
-        options.addRequiredOption("u", "username", true, "username");
-        options.addRequiredOption("p", "password", true, "password");
+        options.addRequiredOption("h", "host", true, "The MySQL server host");
+        options.addRequiredOption("P", "port", true, "The MySQL server port");
+        options.addRequiredOption("D", "database", true, "Your MySQL database");
+        options.addRequiredOption("u", "username", true, "Your MySQL username");
+        options.addRequiredOption("p", "password", true, "Your MySQL password");
         options.addRequiredOption("s", "sql", true, "To be execute sql");
-        options.addOption("j", "threadNum", true, "threadNum");
-        options.addOption("k", "keepOrder", false, "keepOrder");
-        options.addOption("", "inFile", true, "in query args File");
-        options.addOption("", "batchSize", true, "in query batchSize");
-        options.addOption("", "rangeStart", true, "rangeStart");
-        options.addOption("", "rangeEnd", true, "rangeEnd");
-        options.addOption("", "rangeSpan", true, "rangeSpan");
-        options.addOption("r", "reverse", false, "reverse");
-        options.addOption("", "collector", true, "collector");
-        options.addOption("", "printer", true, "printer");
-        options.addOption("o", "outFile", true, "outFile");
-        options.addOption("v", "verbose", false, "verbose");
+        options.addOption("j", "threadNum", true, "execute sql thread pool size");
+        options.addOption("k", "keepOrder", false, "keep output order same with input, always use in()");
+        options.addOption(null, "inFile", true, "sql in(#{in})'s args File, default is stdin, like -");
+        options.addOption(null, "batchSize", true, "sql in(#{in})'s batch size, program will split inFile into batch size every in sql");
+        options.addOption(null, "rangeStart", true, "range sql start arg, like xxx >= #{start}");
+        options.addOption(null, "rangeEnd", true, "range sql end arg, like xxx < #{end}");
+        options.addOption(null, "rangeSpan", true, "range arg span, use split rangeStart and rangeEnd");
+        options.addOption("r", "reverse", false, "output args when sql has'nt result");
+        options.addOption(null, "collector", true, "result collector, can query or agg");
+        options.addOption(null, "printer", true, "data printer, can file");
+        options.addOption("o", "outFile", true, "save data to file");
+        options.addOption("v", "verbose", false, "debug program");
+        options.addOption(null, "help", false, "show usage help");
         CommandLine commandLine = null;
         try {
             commandLine = parser.parse(options, args);
+            if(commandLine.hasOption("help")){
+                HelpFormatter hf = new HelpFormatter();
+                hf.setWidth(10000);
+                hf.printHelp(getCmdLine(), "\n", options, getFooter());
+                System.exit(0);
+            }
         } catch (ParseException e) {
-            System.err.println(e.getMessage() + "\n Usage: \n" +
-                    " java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
-                    "   --sql \"select * from order where (order_id,user_id) in (#{in})\" \\\n" +
-                    "   --inFile \"C:\\\\infile.txt\" --batchSize 10 -v -k -r -o temp.csv \n" +
-
-                    " java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
-                    "   --sql \"select * from order where add_time >= #{start} and add_time < #{end} limit 1\" \\\n" +
-                    "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json" +
-
-                    " java -jar target/parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
-                    "   --sql \"select user_id,count(*) num from order where add_time >= #{start} and add_time < #{end} group by user_id\" \\\n" +
-                    "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r --collector agg -o temp.json"
-            );
+            System.err.println(e.getMessage());
+            HelpFormatter hf = new HelpFormatter();
+            hf.setWidth(10000);
+            hf.printHelp(getCmdLine(), "\n", options, getFooter());
             System.exit(1);
         }
         return commandLine;
     }
+
+    private static String getCmdLine(){
+        return "java -jar parallelsql.jar -[hPupDvkr] --sql $sql " +
+                "   [--inFile $file --batchSize $num] " +
+                "   [--rangeStart $start --rangeEnd $end --rangeSpan $span]" +
+                "   [--collector agg] -o $outfile";
+    }
+
+    private static String getFooter(){
+        return "Demo:\n java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                "   --sql \"select * from order where (order_id,user_id) in (#{in})\" \\\n" +
+                "   --inFile \"C:\\\\infile.txt\" --batchSize 10 -v -k -r -o temp.csv \n\n" +
+
+                " java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                "   --sql \"select * from order where add_time >= #{start} and add_time < #{end} limit 1\" \\\n" +
+                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json\n\n" +
+
+                " java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
+                "   --sql \"select user_id,count(*) num from order where add_time >= #{start} and add_time < #{end} group by user_id\" \\\n" +
+                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r --collector agg -o temp.json";
+    }
+
     public static CliArgs getCliArgs(CommandLine commandLine) {
         //参数解析
         CliArgs cliArgs = new CliArgs();
