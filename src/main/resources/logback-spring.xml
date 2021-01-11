@@ -4,7 +4,26 @@
     <property name="log.appname" value="parallelsql"/>
     <property name="log.env" value="dev"/>
     <conversionRule conversionWord="ip" converterClass="com.fmer.tools.parallelsql.utils.LogIpConvertUtils" />
-    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>%msg%n
+            </pattern>
+        </encoder>
+    </appender>
+    <appender name="stderr" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.err</target>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <encoder>
+            <pattern>%msg%n
+            </pattern>
+        </encoder>
+    </appender>
+    <appender name="logFormatStdout" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
         </filter>
@@ -13,7 +32,7 @@
             </pattern>
         </encoder>
     </appender>
-    <appender name="stderr" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="logFormatStderr" class="ch.qos.logback.core.ConsoleAppender">
         <target>System.err</target>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>ERROR</level>
@@ -23,7 +42,7 @@
             </pattern>
         </encoder>
     </appender>
-    <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="logFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${log.path}/${log.appname}.log</File>
         <encoder>
             <Pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [${log.appname}_${log.env}] [%ip] [%level] [%thread] {"logger":"%logger{60}","msg":"%msg %replace(%ex){'\n', '   '}%nopex"}%n
@@ -35,30 +54,15 @@
             <maxHistory>30</maxHistory>
         </rollingPolicy>
     </appender>
-    <appender name="error" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>ERROR</level>
-        </filter>
-        <File>${log.path}/${log.appname}_error.log</File>
-        <encoder>
-            <Pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [${log.appname}_${log.env}] [%ip] [%level] [%thread] {"logger":"%logger{60}","msg":"%msg"}%n
-            </Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${log.path}/${log.appname}_error-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
-    </appender>
-<!--    <logger name="org.springframework" level="info">-->
-<!--        <appender-ref ref="console"/>-->
-<!--    </logger>-->
     <logger name="io.lettuce.core" level="info"/>
     <logger name="io.netty" level="info"/>
     <logger name="org.hibernate.validator" level="info"/>
-    <root level="info">
+    <logger name="com.fmer.tools.parallelsql.utils.VerboseLogger" level="info">
         <appender-ref ref="stderr"/>
-        <appender-ref ref="file"/>
-        <appender-ref ref="error"/>
+        <appender-ref ref="logFile"/>
+    </logger>
+    <root level="info">
+        <appender-ref ref="logFormatStderr"/>
+        <appender-ref ref="logFile"/>
     </root>
 </configuration>

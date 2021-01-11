@@ -7,6 +7,7 @@ import com.fmer.tools.parallelsql.collector.SqlResultCollector;
 import com.fmer.tools.parallelsql.jdbc.SqlArgTask;
 import com.fmer.tools.parallelsql.printer.Progress;
 import com.fmer.tools.parallelsql.utils.CliUtils;
+import com.fmer.tools.parallelsql.utils.VerboseLogger;
 import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
 import org.springframework.boot.CommandLineRunner;
@@ -43,7 +44,7 @@ public class ParallelSqlApplication implements CommandLineRunner {
         System.setProperty("username", cliArgs.getUsername());
         System.setProperty("password", cliArgs.getPassword());
         if(cliArgs.isVerbose()){
-            System.err.println(Arrays.toString(args));
+            VerboseLogger.log(Arrays.toString(args));
         }
         SpringApplication.run(ParallelSqlApplication.class, args);
     }

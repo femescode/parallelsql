@@ -5,10 +5,7 @@ import com.fmer.tools.parallelsql.bean.InSqlArg;
 import com.fmer.tools.parallelsql.bean.SqlArg;
 import com.fmer.tools.parallelsql.bean.SqlResult;
 import com.fmer.tools.parallelsql.printer.Progress;
-import com.fmer.tools.parallelsql.utils.CliUtils;
-import com.fmer.tools.parallelsql.utils.GsonUtils;
-import com.fmer.tools.parallelsql.utils.ResultSetUtils;
-import com.fmer.tools.parallelsql.utils.SqlUtils;
+import com.fmer.tools.parallelsql.utils.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -27,6 +24,7 @@ import java.util.stream.Collectors;
  * @date 2021/1/9 20:10
  */
 public class SqlArgTask implements Supplier<SqlResult> {
+    private static final int MAX_RESULT_LEN = 240;
     private CliArgs cliArgs;
     private SqlArg sqlArg;
     private JdbcTemplate jdbcTemplate;
@@ -43,23 +41,30 @@ public class SqlArgTask implements Supplier<SqlResult> {
     public SqlResult get() {
         String sql = CliUtils.getExecutableSql(cliArgs.getSql(), sqlArg);
         String plainSql = SqlUtils.getPlainSql(sql, sqlArg.getArgs());
+        if(cliArgs.isVerbose()){
+            VerboseLogger.log(this.progress.getProgressToDisplay() + " sql: " + plainSql);
+        }
+        TableData tableData = null;
+        long startTime = System.currentTimeMillis();
         try{
-            if(cliArgs.isVerbose()){
-                System.err.println(this.progress.getProgressToDisplay() + " sql: " + plainSql);
-            }
-            TableData tableData = jdbcTemplate.query(sql, ResultSetUtils::queryTableData, sqlArg.getArgs());
-            if(cliArgs.isVerbose()){
-                String result = "Total: " + tableData.getRows().size() + " " + GsonUtils.getGson().toJson(tableData.getRows());
-                if(result.length() > 240){
-                    result = StringUtils.abbreviate(result, 240);
-                }
-                System.err.println(this.progress.getProgressToDisplay() + " result: " + result);
-            }
+            tableData = jdbcTemplate.query(sql, ResultSetUtils::queryTableData, sqlArg.getArgs());
             //排序in查询的结果行，并设置每行的tag
             sortRowsIfKeepOrderAndSetTag(tableData);
             return new SqlResult(this.cliArgs, this.sqlArg, plainSql, tableData);
         }catch (Throwable e){
             return new SqlResult(this.cliArgs, this.sqlArg, plainSql, e);
+        }finally {
+            long cost = System.currentTimeMillis() - startTime;
+            if(cliArgs.isVerbose()){
+                String result = String.format("cost: %dms", cost);
+                if(tableData != null){
+                    result += " Total: " + tableData.getRows().size() + " " + GsonUtils.getGson().toJson(tableData.getRows());
+                }
+                if(result.length() > MAX_RESULT_LEN){
+                    result = StringUtils.abbreviate(result, MAX_RESULT_LEN);
+                }
+                VerboseLogger.log(this.progress.getProgressToDisplay() + " result: " + result);
+            }
         }
     }
 

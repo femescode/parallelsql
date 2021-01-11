@@ -1,6 +1,7 @@
 package com.fmer.tools.parallelsql.printer;
 
 import com.fmer.tools.parallelsql.bean.ArgLocation;
+import com.fmer.tools.parallelsql.utils.VerboseLogger;
 import com.google.common.util.concurrent.AtomicDouble;
 import lombok.Data;
 import org.apache.commons.lang3.time.DurationFormatUtils;
@@ -38,14 +39,14 @@ public class Progress {
     public void printProgressIfNeed(){
         long currTime = System.currentTimeMillis();
         if(currTime >= preProgressTime.get() + PROGRESS_PRINT_INTERVAL){
-            System.err.println(getProgressToDisplay());
+            VerboseLogger.log(getProgressToDisplay());
         }
     }
 
     public void printDoneProgress(){
         progress.set(100D);
 
-        System.err.println(String.format("[100%% %s]", getDurationString()));
+        VerboseLogger.log(String.format("[100%% %s]", getDurationString()));
     }
 
     private String getDurationString(){

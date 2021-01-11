@@ -31,28 +31,31 @@ public class RangeArgIterator implements Iterator<RangeSqlArg> {
             this.start = DateUtils.parseDate(rangeStart).getTime();
             this.end = DateUtils.parseDate(cliArgs.getRangeEnd()).getTime();
             this.curr = this.start;
-            this.range = getSpan(cliArgs.getRangeSpan());
+            this.range = getSpan(cliArgs.getRangeSpan(), rangeStart);
             this.isDateType = true;
         }else if(NumberUtils.isDigits(rangeStart)){
             this.start = Long.parseLong(rangeStart);
             this.end = Long.parseLong(cliArgs.getRangeEnd());
             this.curr = this.start;
-            this.range = getSpan(cliArgs.getRangeSpan());
+            this.range = getSpan(cliArgs.getRangeSpan(), rangeStart);
             this.isDateType = false;
         }else{
             throw new RuntimeException("无法识别的rangeStart: " + rangeStart);
         }
     }
 
-    private long getSpan(String rangeSpan){
+    private long getSpan(String rangeSpan, String rangeStart){
         if(StringUtils.isEmpty(rangeSpan)){
             return 1L;
         }
         if(NumberUtils.isDigits(rangeSpan)){
             return Long.parseLong(rangeSpan);
-        }else{
-            return DateUtils.getTimeSpan(rangeSpan);
         }
+        long mills = DateUtils.getTimeSpan(rangeSpan);
+        if(DateUtils.isUnixTimestamp(rangeStart)){
+            return  mills/ DateUtils.ONE_SECOND_TO_MILLS;
+        }
+        return mills;
     }
 
     @Override

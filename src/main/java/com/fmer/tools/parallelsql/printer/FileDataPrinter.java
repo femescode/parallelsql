@@ -5,10 +5,7 @@ import com.fmer.tools.parallelsql.bean.SqlResult;
 import com.fmer.tools.parallelsql.constants.ContentTypeEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import com.fmer.tools.parallelsql.jdbc.RowData;
-import com.fmer.tools.parallelsql.utils.CliUtils;
-import com.fmer.tools.parallelsql.utils.CsvUtils;
-import com.fmer.tools.parallelsql.utils.DateUtils;
-import com.fmer.tools.parallelsql.utils.GsonUtils;
+import com.fmer.tools.parallelsql.utils.*;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -49,13 +46,13 @@ public class FileDataPrinter extends DataPrinter {
         }
         if(fileName.equalsIgnoreCase(StringConstant.STDOUT)){
             if(this.cliArgs.isVerbose()){
-                System.err.println("outFile: " + cliArgs.getOutFile());
+                VerboseLogger.log("outFile: " + cliArgs.getOutFile());
             }
             this.outputStreamWriter = new OutputStreamWriter(System.out, StandardCharsets.UTF_8);
         }else{
             File file = new File(cliArgs.getOutFile());
             if(this.cliArgs.isVerbose()){
-                System.err.println("outFile: " + file.getAbsolutePath());
+                VerboseLogger.log("outFile: " + file.getAbsolutePath());
             }
             try {
                 this.outputStreamWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);

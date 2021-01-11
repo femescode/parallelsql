@@ -20,11 +20,11 @@ $ java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \
 ```bash
 $ java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \
     --sql "select * from order where add_time >= #{start} and add_time < #{end} limit 1" \
-    --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json
+    --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 1h -v -k -r -o temp.json
 ```
 3.  范围查询多个结果group by聚合
 ```bash
 $ java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \
     --sql "select user_id,count(*) num from order where add_time >= #{start} and add_time < #{end} group by user_id" \
-    --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r --collector agg -o temp.json
+    --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 1h -v -k -r --collector agg -o temp.json
 ```

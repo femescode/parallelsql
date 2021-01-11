@@ -20,9 +20,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.springframework.util.CustomizableThreadCreator;
 
 import java.math.BigDecimal;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -53,7 +51,7 @@ public class CliUtils {
         options.addOption(null, "batchSize", true, "sql in(#{in})'s batch size, program will split inFile into batch size every in sql");
         options.addOption(null, "rangeStart", true, "range sql start arg, like xxx >= #{start}");
         options.addOption(null, "rangeEnd", true, "range sql end arg, like xxx < #{end}");
-        options.addOption(null, "rangeSpan", true, "range arg span, use split rangeStart and rangeEnd");
+        options.addOption(null, "rangeSpan", true, "range arg span, use split rangeStart and rangeEnd, can end with y M d h m s if is time range query");
         options.addOption("r", "reverse", false, "output args when sql has'nt result");
         options.addOption(null, "collector", true, "result collector, can query or agg");
         options.addOption(null, "printer", true, "data printer, can file");
@@ -62,13 +60,13 @@ public class CliUtils {
         options.addOption(null, "help", false, "show usage help");
         CommandLine commandLine = null;
         try {
-            commandLine = parser.parse(options, args);
-            if(commandLine.hasOption("help")){
+            if(Arrays.asList(args).contains("--help")){
                 HelpFormatter hf = new HelpFormatter();
                 hf.setWidth(10000);
                 hf.printHelp(getCmdLine(), "\n", options, getFooter());
                 System.exit(0);
             }
+            commandLine = parser.parse(options, args);
         } catch (ParseException e) {
             System.err.println(e.getMessage());
             HelpFormatter hf = new HelpFormatter();
@@ -93,11 +91,11 @@ public class CliUtils {
 
                 " java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
                 "   --sql \"select * from order where add_time >= #{start} and add_time < #{end} limit 1\" \\\n" +
-                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r -o temp.json\n\n" +
+                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 1h -v -k -r -o temp.json\n\n" +
 
                 " java -jar parallelsql.jar -hlocalhost -P3306 -uroot -pxxxx -Dshop \\\n" +
                 "   --sql \"select user_id,count(*) num from order where add_time >= #{start} and add_time < #{end} group by user_id\" \\\n" +
-                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 10000 -v -k -r --collector agg -o temp.json";
+                "   --rangeStart 1610087881 --rangeEnd 1610141407 --rangeSpan 1h -v -k -r --collector agg -o temp.json";
     }
 
     public static CliArgs getCliArgs(CommandLine commandLine) {
