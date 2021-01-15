@@ -13,7 +13,17 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 public class RowData {
+    /**
+     * 数据的标签
+     */
     private Object[] tags;
+    /**
+     * 是否为-r添加的空行
+     */
+    private boolean emptyRow;
+    /**
+     * 数据
+     */
     private Map<String, Object> columnDataMap;
 
     public RowData(Map<String, Object> columnDataMap){

@@ -5,16 +5,17 @@ import com.fmer.tools.parallelsql.bean.SqlResult;
 import com.fmer.tools.parallelsql.constants.ContentTypeEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import com.fmer.tools.parallelsql.jdbc.RowData;
-import com.fmer.tools.parallelsql.utils.*;
+import com.fmer.tools.parallelsql.utils.CliUtils;
+import com.fmer.tools.parallelsql.utils.CsvUtils;
+import com.fmer.tools.parallelsql.utils.GsonUtils;
+import com.fmer.tools.parallelsql.utils.VerboseLogger;
 import com.google.common.collect.Lists;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -64,7 +65,7 @@ public class FileDataPrinter extends DataPrinter {
     }
 
     @Override
-    public void print(SqlResult sqlResult){
+    public synchronized void print(SqlResult sqlResult){
         List<String> lines = Lists.newArrayList();
         //写入标题
         if(i.get() == 0){
@@ -125,7 +126,7 @@ public class FileDataPrinter extends DataPrinter {
     }
 
     @Override
-    public void close(){
+    public synchronized void close(){
         try {
             this.outputStreamWriter.flush();
             this.outputStreamWriter.close();

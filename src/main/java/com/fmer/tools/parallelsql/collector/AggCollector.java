@@ -146,6 +146,9 @@ public class AggCollector extends SqlResultCollector {
             return;
         }
         for(RowData rowData : sqlResult.getTableData().getRows()){
+            if(rowData.isEmptyRow()){
+                continue;
+            }
             if(!rowData.getColumnDataMap().keySet().containsAll(groupByFields)){
                 throw new RuntimeException("行数据中没有包含group by字段，无法聚集计算! groupByFields: " + groupByFields + ", rowData: " + rowData.getColumnDataMap());
             }
@@ -182,7 +185,7 @@ public class AggCollector extends SqlResultCollector {
             aggRowData.getAggFuncDataMap().forEach((k, v) -> {
                 columnDataMap.put(k, v.getResult());
             });
-            RowData row = new RowData(aggRowData.getTags(), columnDataMap);
+            RowData row = new RowData(aggRowData.getTags(), false, columnDataMap);
             rows.add(row);
         }
         tableData.setRows(rows);

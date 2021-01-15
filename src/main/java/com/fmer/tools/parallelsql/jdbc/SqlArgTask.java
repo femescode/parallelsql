@@ -1,9 +1,6 @@
 package com.fmer.tools.parallelsql.jdbc;
 
-import com.fmer.tools.parallelsql.bean.CliArgs;
-import com.fmer.tools.parallelsql.bean.InSqlArg;
-import com.fmer.tools.parallelsql.bean.SqlArg;
-import com.fmer.tools.parallelsql.bean.SqlResult;
+import com.fmer.tools.parallelsql.bean.*;
 import com.fmer.tools.parallelsql.printer.Progress;
 import com.fmer.tools.parallelsql.utils.*;
 import com.google.common.collect.Lists;
@@ -11,10 +8,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,8 @@ public class SqlArgTask implements Supplier<SqlResult> {
             if(cliArgs.isVerbose()){
                 String result = String.format("cost: %dms", cost);
                 if(tableData != null){
-                    result += " Total: " + tableData.getRows().size() + " " + GsonUtils.getGson().toJson(tableData.getRows());
+                    List<RowData> rows = tableData.getRows().stream().filter(o -> !o.isEmptyRow()).collect(Collectors.toList());
+                    result += " Total: " + rows.size() + " " + GsonUtils.getGson().toJson(rows);
                 }
                 if(result.length() > MAX_RESULT_LEN){
                     result = StringUtils.abbreviate(result, MAX_RESULT_LEN);
@@ -90,6 +90,10 @@ public class SqlArgTask implements Supplier<SqlResult> {
                     datas.forEach(r -> r.setTags(keys));
                     if(CollectionUtils.isNotEmpty(datas)){
                         sortedRows.addAll(datas);
+                    }else if(cliArgs.isReverse()){
+                        // 设置-r时, 没有查询到数据的in参数值,也构造一个空行
+                        RowData rowData = new RowData(keys, true, Collections.emptyMap());
+                        sortedRows.add(rowData);
                     }
                 }
                 tableData.setRows(sortedRows);
@@ -101,6 +105,9 @@ public class SqlArgTask implements Supplier<SqlResult> {
                 }
             }
         }else{
+            if(cliArgs.isReverse() && sqlArg instanceof RangeSqlArg && CollectionUtils.isEmpty(tableData.getRows())){
+                tableData.setRows(Collections.singletonList(new RowData(sqlArg.getArgs(), true, Collections.emptyMap())));
+            }
             if(CollectionUtils.isNotEmpty(tableData.getRows())){
                 for(RowData rowData : tableData.getRows()){
                     rowData.setTags(sqlArg.getArgs());

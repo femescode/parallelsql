@@ -37,8 +37,8 @@ public class InArgIterator implements Iterator<InSqlArg> {
 
     public InArgIterator(CliArgs cliArgs){
         this.cliArgs = cliArgs;
-        String fileName = FilenameUtils.getBaseName(cliArgs.getOutFile());
-        String ext = FilenameUtils.getExtension(cliArgs.getOutFile());
+        String fileName = FilenameUtils.getBaseName(cliArgs.getInFile());
+        String ext = FilenameUtils.getExtension(cliArgs.getInFile());
         if(StringUtils.isNotEmpty(ext)){
             this.contentType = ContentTypeEnum.getByValue(ext.toLowerCase());
         }else{
