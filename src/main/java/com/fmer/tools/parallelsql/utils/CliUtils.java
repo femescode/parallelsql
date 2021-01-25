@@ -47,7 +47,7 @@ public class CliUtils {
         options.addRequiredOption("s", "sql", true, "To be execute sql");
         options.addOption("j", "threadNum", true, "execute sql thread pool size");
         options.addOption("k", "keepOrder", false, "keep output order same with input, always use in()");
-        options.addOption("t", "sleepTime", false, "the sleep time for every query");
+        options.addOption("t", "sleepTime", true, "the sleep time for every query");
         options.addOption(null, "inFile", true, "sql in(#{in})'s args File, default is stdin, like -");
         options.addOption(null, "batchSize", true, "sql in(#{in})'s batch size, program will split inFile into batch size every in sql");
         options.addOption(null, "rangeStart", true, "range sql start arg, like xxx >= #{start}");
