@@ -80,14 +80,6 @@ public class ParallelSqlApplication implements CommandLineRunner {
                     progress.setProgress(argLocation);
                     progress.printProgressIfNeed();
                 }
-                if(cliArgs.getSleepTime() > 0){
-                    try {
-                        Thread.sleep(cliArgs.getSleepTime());
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        VerboseLogger.log(ExceptionUtils.getStackTrace(e));
-                    }
-                }
                 return null;
             });
             preFuture = future;

@@ -10,6 +10,7 @@ import com.google.common.collect.Multimaps;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.PredicateUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.*;
@@ -64,6 +65,14 @@ public class SqlArgTask implements Supplier<SqlResult> {
                     result = StringUtils.abbreviate(result, MAX_RESULT_LEN);
                 }
                 VerboseLogger.log(this.progress.getProgressToDisplay() + " result: " + result);
+            }
+            if(cliArgs.getSleepTime() > 0){
+                try {
+                    Thread.sleep(cliArgs.getSleepTime());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    VerboseLogger.log(ExceptionUtils.getStackTrace(e));
+                }
             }
         }
     }
