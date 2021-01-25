@@ -10,6 +10,7 @@ import com.fmer.tools.parallelsql.utils.CliUtils;
 import com.fmer.tools.parallelsql.utils.VerboseLogger;
 import com.google.common.collect.Lists;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -78,6 +79,14 @@ public class ParallelSqlApplication implements CommandLineRunner {
                     ArgLocation argLocation = sqlResult.getSqlArg().getArgLocation();
                     progress.setProgress(argLocation);
                     progress.printProgressIfNeed();
+                }
+                if(cliArgs.getSleepTime() > 0){
+                    try {
+                        Thread.sleep(cliArgs.getSleepTime());
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        VerboseLogger.log(ExceptionUtils.getStackTrace(e));
+                    }
                 }
                 return null;
             });

@@ -47,6 +47,7 @@ public class CliUtils {
         options.addRequiredOption("s", "sql", true, "To be execute sql");
         options.addOption("j", "threadNum", true, "execute sql thread pool size");
         options.addOption("k", "keepOrder", false, "keep output order same with input, always use in()");
+        options.addOption("t", "sleepTime", false, "the sleep time for every query");
         options.addOption(null, "inFile", true, "sql in(#{in})'s args File, default is stdin, like -");
         options.addOption(null, "batchSize", true, "sql in(#{in})'s batch size, program will split inFile into batch size every in sql");
         options.addOption(null, "rangeStart", true, "range sql start arg, like xxx >= #{start}");
@@ -112,6 +113,9 @@ public class CliUtils {
         }
         if(commandLine.hasOption("keepOrder")){
             cliArgs.setKeepOrder(true);
+        }
+        if(commandLine.hasOption("sleepTime")){
+            cliArgs.setSleepTime(Integer.parseInt(commandLine.getOptionValue("sleepTime")));
         }
         if(commandLine.hasOption("inFile")){
             cliArgs.setInFile(commandLine.getOptionValue("inFile", "-"));
@@ -200,7 +204,7 @@ public class CliUtils {
     /**
      * 范围模式，sql包含 xxx >= #{start} and xxx < #{end}
      */
-    private static final Pattern RANGE_PATTERN = Pattern.compile("([\\w_]+)\\s*>=\\s*(#\\{\\s*start\\s*})\\s+and\\s+\\1\\s*<\\s*(#\\{\\s*end\\s*})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern RANGE_PATTERN = Pattern.compile("([.\\w_]+)\\s*>=\\s*(#\\{\\s*start\\s*})\\s+and\\s+\\1\\s*<\\s*(#\\{\\s*end\\s*})", Pattern.CASE_INSENSITIVE);
 
     /**
      * 获取sql类型

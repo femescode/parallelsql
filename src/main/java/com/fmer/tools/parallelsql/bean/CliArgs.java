@@ -5,8 +5,6 @@ import com.fmer.tools.parallelsql.constants.DataPrinterEnum;
 import com.fmer.tools.parallelsql.constants.StringConstant;
 import lombok.Data;
 
-import java.util.Set;
-
 /**
  * 命令行参数对象
  * @author fengmeng
@@ -22,6 +20,7 @@ public class CliArgs {
     private String sql;
     private int threadNum = 1;
     private boolean keepOrder;
+    private long sleepTime = 500;
     /**
      * in查询的参数文件，-表示从标准输入读取
      */
