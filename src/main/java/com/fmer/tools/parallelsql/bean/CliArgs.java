@@ -20,7 +20,7 @@ public class CliArgs {
     private String sql;
     private int threadNum = 1;
     private boolean keepOrder;
-    private long sleepTime = 500;
+    private long sleepTime = 150;
     /**
      * in查询的参数文件，-表示从标准输入读取
      */
