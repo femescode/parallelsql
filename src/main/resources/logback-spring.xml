@@ -28,7 +28,7 @@
             <level>INFO</level>
         </filter>
         <encoder>
-            <pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [${log.appname}_${log.env}] [%ip] [%level] [%thread] {"logger":"%logger{60}","msg":"%msg"}%n
+            <pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [%level] %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -38,14 +38,14 @@
             <level>ERROR</level>
         </filter>
         <encoder>
-            <pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [${log.appname}_${log.env}] [%ip] [%level] [%thread] {"logger":"%logger{60}","msg":"%msg"}%n
+            <pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [%level] %msg%n
             </pattern>
         </encoder>
     </appender>
     <appender name="logFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${log.path}/${log.appname}.log</File>
         <encoder>
-            <Pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [${log.appname}_${log.env}] [%ip] [%level] [%thread] {"logger":"%logger{60}","msg":"%msg %replace(%ex){'\n', '   '}%nopex"}%n
+            <Pattern>%n[%d{yyyy-MM-dd HH:mm:ss}] [%level] %msg %replace(%ex){'\n', '   '}%nopex%n
             </Pattern>
             <charset>UTF-8</charset>
         </encoder>
@@ -59,7 +59,6 @@
     <logger name="org.hibernate.validator" level="info"/>
     <logger name="com.fmer.tools.parallelsql.utils.VerboseLogger" level="info">
         <appender-ref ref="stderr"/>
-        <appender-ref ref="logFile"/>
     </logger>
     <root level="info">
         <appender-ref ref="logFormatStderr"/>

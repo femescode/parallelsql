@@ -50,6 +50,15 @@ public class Progress {
     }
 
     private String getDurationString(){
-        return DurationFormatUtils.formatDurationWords(System.currentTimeMillis()-startTime, true, true);
+        String format = "dd'd'HH'h'mm'm'ss's'";
+        long cost = System.currentTimeMillis()-startTime;
+        if(cost < 60 * 1000){
+            format = "ss's'";
+        }else if(cost < 60 * 60 * 1000){
+            format = "mm'm'ss's'";
+        }else if(cost < 24 * 60 * 60 * 1000){
+            format = "HH'h'mm'm'ss's'";
+        }
+        return DurationFormatUtils.formatDuration(cost, format, false);
     }
 }
