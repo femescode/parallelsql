@@ -1,6 +1,8 @@
 package com.fmer.tools.parallelsql.operation;
 
 import com.fmer.tools.parallelsql.jdbc.TableData;
+import com.fmer.tools.parallelsql.operation.bean.DataGrid;
+import com.fmer.tools.parallelsql.operation.bean.DataRow;
 import lombok.Data;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.statement.select.Join;
@@ -14,7 +16,10 @@ public abstract class BaseOperation implements Operation {
     public PlainSelect plainSelect = new PlainSelect();
 
     @Override
-    public TableData fetchNext(Object param) {
+    public void initParam(DataRow param){}
+
+    @Override
+    public DataGrid fetchNext() {
         return null;
     }
 

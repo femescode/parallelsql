@@ -20,13 +20,17 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class OperationUtils {
+    private static final String sql1 = "select * from db1.order a " +
+            "join db2.order_item b on a.order_id=b.order_id " +
+            "left join db3.waybill_item c on b.order_id=c.order_id and b.goods_id=c.goods_id " +
+            "where a.add_time > :start_time and a.add_time < :end_time and b.goods_id in (1,2,3) and c.sn='12345'";
+    private static final String sql2 = "select * from db1.order a,db2.order_item b where a.order_id=b.order_id";
+    private static final String sql3 = "select * from db1.order a join db2.order_item b on a.order_id=b.order_id";
+    private static final String sql4 = "select * from order a join order_item b on a.order_id=b.order_id";
     private OperationUtils(){}
 
     public static void main(String[] args) {
-        Operation operation = OperationUtils.parseSql("select * from shop.order a " +
-                "join tmall.order_item b on a.order_id=b.order_id " +
-                "left join cold.waybill_item c on b.order_id=c.order_id and b.goods_id=c.goods_id " +
-                "where a.add_time > ? and a.add_time < ? and b.goods_id in (1,2,3) and c.sn='12345'");
+        Operation operation = OperationUtils.parseSql(sql1);
         System.out.println(operation);
     }
 
@@ -107,16 +111,15 @@ public class OperationUtils {
         selectBody.accept(new SelectVisitor() {
             @Override
             public void visit(PlainSelect plainSelect) {
-                //TODO 像 or条件、join不同库、in查询不同库、exists查询不同库、子查询不同库，都肯定是要添加operation层级的
-                plainSelect.getSelectItems();
-                plainSelect.getFromItem();
-                plainSelect.getJoins();
-                plainSelect.getWhere();
-                plainSelect.getGroupBy();
-                plainSelect.getHaving();
-                plainSelect.getOrderByElements();
-                plainSelect.getOffset();
-                plainSelect.getLimit();
+                //解析sql中各表达式节点使用了哪些库
+                Map<Object, Set<String>> nodeDbMap = DbParseUtils.getNodeDbMap(selectBody);
+                Set<String> allDbSet = nodeDbMap.get(selectBody);
+                if(allDbSet.size() == 1){
+                    SqlQueryOperation fromOperation = new SqlQueryOperation();
+                    fromOperation.setPlainSelect(plainSelect);
+                    rootRef.set(fromOperation);
+                    return;
+                }
 
                 BaseOperation root;
                 Map<String,SqlQueryOperation> sqlQueryOperationMap = Maps.newHashMap();
@@ -136,14 +139,10 @@ public class OperationUtils {
                     }else{
                         SqlQueryOperation joinOperation = new SqlQueryOperation();
                         addJoin(joinOperation, join);
-                        joinOperation.toString();
                         addOperation(sqlQueryOperationMap, schema, joinOperation);
                         root = new JoinOperation(root, joinOperation);
                     }
                 }
-
-                //解析sql中各表达式节点使用了哪些库
-                Map<Object, Set<String>> nodeDbMap = DbParseUtils.getNodeDbMap(selectBody);
 
                 //处理where
                 Expression where = plainSelect.getWhere();
@@ -156,9 +155,6 @@ public class OperationUtils {
                 }
 
                 //处理group by
-                if(sqlQueryOperationMap.size() == 1){
-                    //下推到其中 TODO
-                }
 
                 //处理having
 

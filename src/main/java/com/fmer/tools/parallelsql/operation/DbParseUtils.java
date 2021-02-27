@@ -50,12 +50,13 @@ public class DbParseUtils {
         fromItem.accept(new FromItemVisitor() {
             @Override
             public void visit(Table table) {
-                dbSet.add(table.getSchemaName());
+                String schemaName = StringUtils.defaultString(table.getSchemaName());
+                dbSet.add(schemaName);
                 if(!tableDbMap.containsKey(table.getName())){
-                    tableDbMap.put(table.getName(), table.getSchemaName());
+                    tableDbMap.put(table.getName(), schemaName);
                 }
                 if(table.getAlias() != null){
-                    tableDbMap.put(table.getAlias().getName(), table.getSchemaName());
+                    tableDbMap.put(table.getAlias().getName(), schemaName);
                 }
             }
 
