@@ -4,6 +4,9 @@ import lombok.Data;
 
 @Data
 public class FieldInfo {
+    /**
+     * 字段来源，来自表数据table，后期计算生成calc
+     */
     private String source;
     private String schema;
     private String table;

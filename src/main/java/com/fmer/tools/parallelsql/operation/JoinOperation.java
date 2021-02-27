@@ -2,6 +2,7 @@ package com.fmer.tools.parallelsql.operation;
 
 import com.fmer.tools.parallelsql.operation.bean.DataGrid;
 import com.fmer.tools.parallelsql.operation.bean.DataRow;
+import com.fmer.tools.parallelsql.operation.bean.QueryParam;
 
 public class JoinOperation extends BaseOperation {
     private boolean isLeftJoin;
@@ -14,25 +15,41 @@ public class JoinOperation extends BaseOperation {
     }
 
     @Override
-    public DataGrid fetchNext() {
-        DataGrid tableData = from.fetchNext();
-        if(tableData == null){
-            return null;
+    public DataFetcher getFetcher(QueryParam param) {
+        DataFetcher fromFetcher = this.from.getFetcher(param);
+        return new JoinFetcher(fromFetcher, join);
+    }
+
+    public static class JoinFetcher implements DataFetcher{
+        private DataFetcher fromFetcher;
+        private BaseOperation join;
+
+        public JoinFetcher(DataFetcher fromFetcher, BaseOperation join) {
+            this.fromFetcher = fromFetcher;
+            this.join = join;
         }
-        DataGrid newTableData = new DataGrid();
-        newTableData.getFieldInfos().addAll(tableData.getFieldInfos());
-        for (DataRow dataRow : tableData.getRows()) {
-            join.initParam(dataRow);
-            DataGrid joinData = join.fetchNext();
-            if (joinData != null) {
-                newTableData.getFieldInfos().addAll(joinData.getFieldInfos());
-                for(DataRow joinRowData : joinData.getRows()){
-                    DataRow newDataRow = merge(dataRow, joinRowData);
-                    newTableData.getRows().add(newDataRow);
+
+        @Override
+        public DataGrid fetchNext() {
+            DataGrid dataGrid = fromFetcher.fetchNext();
+            if(dataGrid == null){
+                return null;
+            }
+            DataGrid newDataGrid = new DataGrid();
+            newDataGrid.getFieldInfos().addAll(dataGrid.getFieldInfos());
+            for (DataRow dataRow : dataGrid.getRows()) {
+                DataFetcher dataFetcher = join.getFetcher(new QueryParam("1", dataRow));
+                DataGrid joinData = dataFetcher.fetchNext();
+                if (joinData != null) {
+                    newDataGrid.getFieldInfos().addAll(joinData.getFieldInfos());
+                    for(DataRow joinDataRow : joinData.getRows()){
+                        DataRow newDataRow = merge(dataRow, joinDataRow);
+                        newDataGrid.getRows().add(newDataRow);
+                    }
                 }
             }
+            return newDataGrid;
         }
-        return newTableData;
     }
 
     public static DataRow merge(DataRow dataRow1, DataRow dataRow2){
