@@ -2,12 +2,10 @@ package com.fmer.tools.parallelsql.operation;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.Statements;
@@ -24,6 +22,14 @@ import java.util.concurrent.atomic.AtomicReference;
 public class OperationUtils {
     private OperationUtils(){}
 
+    public static void main(String[] args) {
+        Operation operation = OperationUtils.parseSql("select * from shop.order a " +
+                "join tmall.order_item b on a.order_id=b.order_id " +
+                "left join cold.waybill_item c on b.order_id=c.order_id and b.goods_id=c.goods_id " +
+                "where a.add_time > ? and a.add_time < ? and b.goods_id in (1,2,3) and c.sn='12345'");
+        System.out.println(operation);
+    }
+
     public static Operation parseSql(String sql){
         try {
             Statements statements = CCJSqlParserUtil.parseStatements(sql);
@@ -34,33 +40,74 @@ public class OperationUtils {
             Assert.isInstanceOf(Select.class, statementList.get(0), "只支持select语句, sql: " + sql);
             Select select = (Select)statementList.get(0);
             SelectBody selectBody = select.getSelectBody();
+            return parseSelectBody(selectBody);
         } catch (JSQLParserException e) {
-            ExceptionUtils.rethrow(e);
+            return ExceptionUtils.rethrow(e);
         }
-        return null;
     }
 
-    private static Set<String> getSchemas(FromItem fromItem){
-        return Sets.newHashSet(((Table)fromItem).getSchemaName());
+    private static String getSchema(FromItem fromItem){
+        return ((Table)fromItem).getSchemaName();
     }
 
-    private static void addFromItem(SqlQueryOperation sqlQueryOperation, FromItem fromItem){
+    private static void addFromItem(BaseOperation sqlQueryOperation, FromItem fromItem){
         sqlQueryOperation.getPlainSelect().setFromItem(fromItem);
     }
 
-    private static void addJoin(SqlQueryOperation sqlQueryOperation, Join join){
+    private static void addJoin(BaseOperation sqlQueryOperation, Join join){
         if(sqlQueryOperation.getPlainSelect().getJoins() == null){
             sqlQueryOperation.getPlainSelect().setJoins(Lists.newArrayList());
         }
         sqlQueryOperation.getPlainSelect().getJoins().add(join);
     }
 
+    private static void addWhere(BaseOperation sqlQueryOperation, Expression where){
+        if(sqlQueryOperation.getPlainSelect().getWhere() == null){
+            sqlQueryOperation.getPlainSelect().setWhere(where);
+        }else{
+            sqlQueryOperation.getPlainSelect().setWhere(new AndExpression(sqlQueryOperation.getPlainSelect().getWhere(), where));
+        }
+    }
 
+    private static void addField(BaseOperation sqlQueryOperation, SelectItem selectItem){
+        if(sqlQueryOperation.getPlainSelect().getSelectItems() == null){
+            sqlQueryOperation.getPlainSelect().setSelectItems(Lists.newArrayList());
+        }
+        sqlQueryOperation.getPlainSelect().getSelectItems().add(selectItem);
+    }
+
+    private static void addOperation(Map<String,SqlQueryOperation> sqlQueryOperationMap, String schemaName, SqlQueryOperation sqlQueryOperation){
+        sqlQueryOperationMap.put(schemaName, sqlQueryOperation);
+    }
+
+    private static SqlQueryOperation getOperation(Map<String,SqlQueryOperation> sqlQueryOperationMap, String schemaName){
+        return sqlQueryOperationMap.get(schemaName);
+    }
+
+    private static void parseWhereExpress(Expression where, Map<Object, Set<String>> exprDbMap, Map<String,SqlQueryOperation> sqlQueryOperationMap, FilterOperation filterOperation){
+        Set<String> schemaSet = exprDbMap.get(where);
+        if(schemaSet.size() == 1){
+            //下推到from或join
+            SqlQueryOperation operation = getOperation(sqlQueryOperationMap, schemaSet.iterator().next());
+            addWhere(operation, where);
+        }else if(where instanceof AndExpression){
+            AndExpression andExpression = (AndExpression)where;
+            Expression leftExpr = andExpression.getLeftExpression();
+            parseWhereExpress(leftExpr, exprDbMap, sqlQueryOperationMap, filterOperation);
+            Expression rightExpr = andExpression.getRightExpression();
+            parseWhereExpress(rightExpr, exprDbMap, sqlQueryOperationMap, filterOperation);
+        }else{
+            //放到filterOperation中
+            addWhere(filterOperation, where);
+        }
+    }
 
     private static BaseOperation parseSelectBody(SelectBody selectBody){
+        AtomicReference<BaseOperation> rootRef = new AtomicReference<>();
         selectBody.accept(new SelectVisitor() {
             @Override
             public void visit(PlainSelect plainSelect) {
+                //TODO 像 or条件、join不同库、in查询不同库、exists查询不同库、子查询不同库，都肯定是要添加operation层级的
                 plainSelect.getSelectItems();
                 plainSelect.getFromItem();
                 plainSelect.getJoins();
@@ -72,37 +119,61 @@ public class OperationUtils {
                 plainSelect.getLimit();
 
                 BaseOperation root;
-                Map<Table, SqlQueryOperation> sqlQueryOperationMap = Maps.newHashMap();
+                Map<String,SqlQueryOperation> sqlQueryOperationMap = Maps.newHashMap();
                 //处理from
                 SqlQueryOperation fromOperation = new SqlQueryOperation();
-                Set<String> fromSchemas = getSchemas(plainSelect.getFromItem());
+                String fromSchema = getSchema(plainSelect.getFromItem());
                 addFromItem(fromOperation, plainSelect.getFromItem());
                 root = fromOperation;
-                sqlQueryOperationMap.put((Table) plainSelect.getFromItem(), fromOperation);
-
+                addOperation(sqlQueryOperationMap, fromSchema, fromOperation);
 
                 //处理join
                 for(Join join : plainSelect.getJoins()){
-                    Set<String> schemas = getSchemas(join.getRightItem());
-                    if(fromSchemas.containsAll(schemas)){
-                        addJoin(fromOperation, join);
+                    String schema = getSchema(join.getRightItem());
+                    SqlQueryOperation operation = getOperation(sqlQueryOperationMap, schema);
+                    if(operation != null){
+                        addJoin(operation, join);
                     }else{
                         SqlQueryOperation joinOperation = new SqlQueryOperation();
                         addJoin(joinOperation, join);
-                        sqlQueryOperationMap.put(((Table)join.getRightItem()), joinOperation);
+                        joinOperation.toString();
+                        addOperation(sqlQueryOperationMap, schema, joinOperation);
                         root = new JoinOperation(root, joinOperation);
                     }
                 }
-                //TODO 像 or条件、join不同库、in查询不同库、exists查询不同库、子查询不同库，都肯定是要添加operation层级的
+
+                //解析sql中各表达式节点使用了哪些库
+                Map<Object, Set<String>> nodeDbMap = DbParseUtils.getNodeDbMap(selectBody);
 
                 //处理where
                 Expression where = plainSelect.getWhere();
-                EqualsTo equalsTo = (EqualsTo)where;
-                Column left = (Column) equalsTo.getLeftExpression();
-                if(sqlQueryOperationMap.containsKey(left.getTable())){
-                    sqlQueryOperationMap.get(left.getTable());
-                    // 将过滤条件添加到相关表的sqlQueryOperation TODO
+                if(where != null){
+                    FilterOperation filterOperation = new FilterOperation(root);
+                    parseWhereExpress(where, nodeDbMap, sqlQueryOperationMap, filterOperation);
+                    if(filterOperation.getPlainSelect().getWhere() != null){
+                        root = filterOperation;
+                    }
                 }
+
+                //处理group by
+                if(sqlQueryOperationMap.size() == 1){
+                    //下推到其中 TODO
+                }
+
+                //处理having
+
+                //处理order by
+
+                //处理limit
+
+                //处理fields
+                FieldsOperation fieldsOperation = new FieldsOperation(root);
+                for(SelectItem selectItem : plainSelect.getSelectItems()){
+                    addField(fieldsOperation, selectItem);
+                }
+                root = fieldsOperation;
+
+                rootRef.set(root);
             }
 
             @Override
@@ -120,6 +191,6 @@ public class OperationUtils {
 
             }
         });
-        return null;
+        return rootRef.get();
     }
 }

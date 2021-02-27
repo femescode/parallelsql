@@ -1,9 +1,9 @@
 package com.fmer.tools.parallelsql.operation;
 
-public class FilterOperation extends BaseOperation {
+public class FieldsOperation extends BaseOperation {
     private BaseOperation query;
 
-    public FilterOperation(BaseOperation query) {
+    public FieldsOperation(BaseOperation query) {
         this.query = query;
     }
 }
